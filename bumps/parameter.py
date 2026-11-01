@@ -223,6 +223,7 @@ class SupportsPrior:
                 # new id every time:
                 else:
                     print("reusing reparameterized slot for dynamic bounds", self.name)
+                    self.slot.prior = self.prior
                 # self.fixed = True  # reparameterized slot is always fixed
                 return
             # get the intersection of the limits here.
@@ -468,6 +469,8 @@ class Parameter(ValueProtocol, SupportsPrior):
 
     @property
     def fixed(self):
+        if isinstance(self.slot, Reparameterized):
+            return self.slot.fixed
         return not self.fittable or self._fixed
 
     @fixed.setter
@@ -652,8 +655,8 @@ class Parameter(ValueProtocol, SupportsPrior):
         )
         if bounds is not None:
             bounds = (
-                (-np.inf if bounds[0] is None else float(bounds[0])),
-                (np.inf if bounds[1] is None else float(bounds[1])),
+                (-np.inf if bounds[0] is None else bounds[0] if isinstance(bounds[0], ValueProtocol) else float(bounds[0])),
+                (np.inf if bounds[1] is None else bounds[1] if isinstance(bounds[1], ValueProtocol) else float(bounds[1])),
             )
         self.bounds = bounds
         self.distribution = distribution

@@ -738,6 +738,11 @@ class FitProblem(Generic[FitnessType], CovarianceMixin):
             if not hasattr(p, "reset_prior"):
                 continue
             p.reset_prior()
+            # Resetting a prior can introduce fit coordinates and dependencies.
+            # Visit them in this pass before collecting the solver parameters.
+            for dependency in parameter.unique(p.parameters()):
+                if not any(dependency is existing for existing in all_parameters):
+                    all_parameters.append(dependency)
             limits = p.prior.limits
             value = p.value
             if (limits[0] > value) or (value > limits[1]):
@@ -756,6 +761,7 @@ class FitProblem(Generic[FitnessType], CovarianceMixin):
         self.broken_constraints = broken
 
         # Collect all fitting parameters
+        all_parameters = parameter.unique(self.model_parameters())
         pars = []
         pars_by_id = {}
         for p in all_parameters:
